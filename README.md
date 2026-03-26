@@ -234,8 +234,8 @@ portfolio-analyzer/
 
 If you're a recruiter or collaborator interested in this project:
 
-* GitHub: https://github.com/your-username
-* LinkedIn: https://linkedin.com/in/your-profile
+* GitHub: https://github.com/shubhanagrawal
+* LinkedIn: https://www.linkedin.com/in/shubhan-agrawal/
 
 ---
 
