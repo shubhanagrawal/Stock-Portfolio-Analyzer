@@ -110,3 +110,26 @@ async def search_ticker(query: str):
         return [{"ticker": query, "name": info.get("shortName", query), "exchange": info.get("exchange", "Unknown")}]
     except Exception:
         return []
+
+async def get_ticker_quote(ticker: str) -> dict:
+    try:
+        t = await asyncio.to_thread(yf.Ticker, ticker)
+        info = await asyncio.to_thread(lambda: t.info)
+        return {
+            "name": info.get("shortName", ticker),
+            "sector": info.get("sector", "N/A"),
+            "industry": info.get("industry", "N/A"),
+            "marketCap": info.get("marketCap", 0),
+            "volume": info.get("averageVolume", 0),
+            "previousClose": info.get("previousClose", 0.0),
+            "open": info.get("open", 0.0),
+            "dayHigh": info.get("dayHigh", 0.0),
+            "dayLow": info.get("dayLow", 0.0),
+            "fiftyTwoWeekHigh": info.get("fiftyTwoWeekHigh", 0.0),
+            "fiftyTwoWeekLow": info.get("fiftyTwoWeekLow", 0.0),
+            "trailingPE": info.get("trailingPE", 0.0),
+            "dividendYield": info.get("dividendYield", 0.0)
+        }
+    except Exception as e:
+        logger.error(f"Failed to fetch quote for {ticker}: {e}")
+        return {"error": "Failed to load detailed data"}

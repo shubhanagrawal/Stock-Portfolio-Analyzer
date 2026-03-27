@@ -6,6 +6,7 @@ import RegisterPage from './pages/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
 import TransactionsPage from './pages/TransactionsPage'
 import RiskPage from './pages/RiskPage'
+import WatchlistPage from './pages/WatchlistPage'
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/transactions" element={<TransactionsPage />} />
         <Route path="/risk" element={<RiskPage />} />
+        <Route path="/watchlist" element={<WatchlistPage />} />
       </Route>
       
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

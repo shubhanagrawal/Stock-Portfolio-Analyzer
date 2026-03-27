@@ -19,7 +19,12 @@ try:
         pool_pre_ping=True,
         echo=False
     )
-    AsyncSessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    AsyncSessionLocal = async_sessionmaker(
+        autocommit=False, 
+        autoflush=False, 
+        bind=engine,
+        expire_on_commit=False
+    )
 except Exception as e:
     logger.error(f"Failed to create database engine: {e}")
     raise e

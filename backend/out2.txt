@@ -1,0 +1,49 @@
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.autogenerate.compare] Detected added table 'watchlist'
+INFO  [alembic.autogenerate.compare] Detected added index ''ix_watchlist_user_id'' on '('user_id',)'
+INFO  [alembic.autogenerate.compare] Detected removed index 'ix_transactions_date' on 'transactions'
+INFO  [alembic.autogenerate.compare] Detected added index ''ix_transactions_transaction_date'' on '('transaction_date',)'
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "D:\Anaconda\envs\portfolio-analyzer\Scripts\alembic.exe\__main__.py", line 5, in <module>
+  File "D:\Anaconda\envs\portfolio-analyzer\Lib\site-packages\alembic\config.py", line 641, in main
+    CommandLine(prog=prog).main(argv=argv)
+  File "D:\Anaconda\envs\portfolio-analyzer\Lib\site-packages\alembic\config.py", line 631, in main
+    self.run_cmd(cfg, options)
+  File "D:\Anaconda\envs\portfolio-analyzer\Lib\site-packages\alembic\config.py", line 608, in run_cmd
+    fn(
+  File "D:\Anaconda\envs\portfolio-analyzer\Lib\site-packages\alembic\command.py", line 243, in revision
+    scripts = [script for script in revision_context.generate_scripts()]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Anaconda\envs\portfolio-analyzer\Lib\site-packages\alembic\command.py", line 243, in <listcomp>
+    scripts = [script for script in revision_context.generate_scripts()]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Anaconda\envs\portfolio-analyzer\Lib\site-packages\alembic\autogenerate\api.py", line 650, in generate_scripts
+    yield self._to_script(generated_revision)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Anaconda\envs\portfolio-analyzer\Lib\site-packages\alembic\autogenerate\api.py", line 555, in _to_script
+    return self.script_directory.generate_revision(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Anaconda\envs\portfolio-analyzer\Lib\site-packages\alembic\script\base.py", line 746, in generate_revision
+    self._generate_template(
+  File "D:\Anaconda\envs\portfolio-analyzer\Lib\site-packages\alembic\script\base.py", line 593, in _generate_template
+    util.template_to_file(src, dest, self.output_encoding, **kw)
+  File "D:\Anaconda\envs\portfolio-analyzer\Lib\site-packages\alembic\util\pyfiles.py", line 25, in template_to_file
+    template = Template(filename=template_file)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Anaconda\envs\portfolio-analyzer\Lib\site-packages\mako\template.py", line 312, in __init__
+    module = self._compile_from_file(path, filename)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Anaconda\envs\portfolio-analyzer\Lib\site-packages\mako\template.py", line 387, in _compile_from_file
+    data = util.read_file(filename)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Anaconda\envs\portfolio-analyzer\Lib\site-packages\mako\util.py", line 375, in read_file
+    with open(path, mode) as fp:
+         ^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'alembic\\script.py.mako'
+
+ERROR conda.cli.main_run:execute(125): `conda run alembic revision --autogenerate -m watchlist` failed. (See above for error)
+Generating D:\LAB\FSDL Mini Project\stock-portfolio-analyzer\backend\alembic\versions\d4ab36e627cf_watchlist.py ...  FAILED
+

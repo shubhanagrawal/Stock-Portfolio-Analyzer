@@ -9,3 +9,7 @@ export const getPerformance = (days = 90) => {
 }
 export const getRisk = () => client.get('/portfolio/risk')
 export const getReport = () => client.get('/portfolio/report', { responseType: 'blob' })
+export const getCorrelation = () => client.get('/portfolio/correlation')
+export const getSectors = () => client.get('/portfolio/sectors')
+export const getRolling = (window = 30) => client.get(`/portfolio/rolling?window=${window}`)
+export const getHeatmap = () => client.get('/portfolio/heatmap')

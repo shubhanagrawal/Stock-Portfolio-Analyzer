@@ -1,20 +1,22 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#f97316']
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#f97316', '#14b8a6', '#a855f7']
 
-export default function AllocationPieChart({ holdings }) {
-  if (!holdings || holdings.length === 0) return <div className="text-gray-500 text-sm py-10 text-center">No holdings to display.</div>
+export default function SectorChart({ data }) {
+  if (!data || !data.sectors || data.sectors.length === 0) {
+    return <div className="text-gray-500 text-sm py-10 text-center">No sector data available.</div>
+  }
 
-  const data = holdings.map(h => ({
-    name: h.ticker.replace('.NS', ''),
-    value: parseFloat(h.value.toFixed(2))
-  })).sort((a,b) => b.value - a.value)
+  const chartData = data.sectors.map(s => ({
+    name: s.sector,
+    value: parseFloat(s.value.toFixed(2))
+  }))
 
   return (
     <ResponsiveContainer width="100%" height={280}>
       <PieChart margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
         <Pie
-          data={data}
+          data={chartData}
           cx="50%"
           cy="45%"
           innerRadius={60}
@@ -23,7 +25,7 @@ export default function AllocationPieChart({ holdings }) {
           dataKey="value"
           stroke="none"
         >
-          {data.map((entry, index) => (
+          {chartData.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
           ))}
         </Pie>

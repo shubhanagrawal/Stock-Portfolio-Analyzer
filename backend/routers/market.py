@@ -37,3 +37,11 @@ async def query_ticker(
     current_user: User = Depends(get_current_user)
 ):
     return await search_ticker(q)
+
+@router.get("/quote/{ticker}")
+async def fetch_quote(
+    ticker: str,
+    current_user: User = Depends(get_current_user)
+):
+    from services.market_service import get_ticker_quote
+    return await get_ticker_quote(ticker.upper())

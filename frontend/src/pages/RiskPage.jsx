@@ -1,13 +1,24 @@
-import { useQuery } from '@tanstack/react-query'
-import { getRisk, getReport } from '../api/portfolio'
+import { useQueries } from '@tanstack/react-query'
+import { getRisk, getReport, getRolling, getHeatmap } from '../api/portfolio'
 import MetricCard from '../components/MetricCard'
-import RiskAlert from '../components/RiskAlert'
 import SkeletonCard from '../components/SkeletonCard'
 import ErrorState from '../components/ErrorState'
+import RollingMetricsChart from '../charts/RollingMetricsChart'
+import ReturnHeatmap from '../charts/ReturnHeatmap'
 import { Download, AlertTriangle } from 'lucide-react'
 
 export default function RiskPage() {
-  const { data, isLoading, error } = useQuery({ queryKey: ['portfolio', 'risk'], queryFn: getRisk })
+  const [riskQ, rollingQ, heatmapQ] = useQueries({
+    queries: [
+      { queryKey: ['portfolio', 'risk'], queryFn: getRisk },
+      { queryKey: ['portfolio', 'rolling'], queryFn: () => getRolling(30) },
+      { queryKey: ['portfolio', 'heatmap'], queryFn: getHeatmap },
+    ]
+  })
+
+  const data = riskQ.data
+  const isLoading = riskQ.isLoading
+  const error = riskQ.error
 
   const handleDownload = async () => {
     try {
@@ -29,105 +40,115 @@ export default function RiskPage() {
   const hasData = data?.sharpe_ratio !== null && data?.sharpe_ratio !== undefined
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+    <div className="p-4 space-y-4">
+      <div className="flex justify-between items-center bg-gray-900 p-4 border border-gray-800 rounded-sm">
         <div>
-          <h2 className="text-lg font-bold text-gray-900">Advanced Risk Analytics</h2>
-          <p className="text-sm text-gray-500">Trailing 1-year performance metrics</p>
+          <h2 className="text-sm uppercase font-bold text-gray-100 tracking-wider">Risk Analytics Terminal</h2>
+          <p className="text-xs text-gray-400 font-mono mt-1">TRAILING 1-YEAR AGGREGATE</p>
         </div>
         <button
           onClick={handleDownload}
-          className="flex items-center space-x-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-4 py-2 rounded-lg transition-colors text-sm font-medium"
+          className="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-sm transition-colors text-xs font-bold uppercase tracking-wide"
         >
-          <Download className="w-4 h-4" />
-          <span>Export CSV Report</span>
+          <Download className="w-3.5 h-3.5" />
+          <span>Export SEC-CSV</span>
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Primary metrics */}
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
         {isLoading ? (
-          Array(3).fill(0).map((_, i) => <SkeletonCard key={i} />)
+          Array(6).fill(0).map((_, i) => <SkeletonCard key={i} />)
         ) : (
           <>
-            <MetricCard 
-              label="Sharpe Ratio (Annual)" 
-              value={hasData ? parseFloat(data.sharpe_ratio.toFixed(2)) : undefined} 
-              format="raw" 
-            />
-            <MetricCard 
-              label="Volatility (Annual)" 
-              value={hasData ? data.volatility_annual : undefined} 
-              format="percent" 
-            />
-            <MetricCard 
-              label="Max Drawdown" 
-              value={hasData ? data.max_drawdown : undefined} 
-              format="percent" 
-            />
+            <MetricCard label="Sharpe" value={hasData ? parseFloat(data.sharpe_ratio.toFixed(2)) : undefined} format="raw" />
+            <MetricCard label="Sortino" value={data?.sortino_ratio != null ? parseFloat(data.sortino_ratio.toFixed(2)) : undefined} format="raw" />
+            <MetricCard label="Beta" value={data?.beta != null ? parseFloat(data.beta.toFixed(2)) : undefined} format="raw" />
+            <MetricCard label="Vol(Ann.)" value={hasData ? data.volatility_annual : undefined} format="percent" />
+            <MetricCard label="Max DD" value={hasData ? data.max_drawdown : undefined} format="percent" />
+            <MetricCard label="VaR(95%)" value={data?.var_95 != null ? data.var_95 : undefined} format="percent" />
           </>
         )}
       </div>
 
       {data?.max_drawdown_period?.start && (
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 text-sm">
-          <span className="font-semibold text-gray-700">Max Drawdown Period: </span>
-          <span className="text-gray-600">{data.max_drawdown_period.start} to {data.max_drawdown_period.end}</span>
+        <div className="bg-gray-900 p-3 border border-gray-800 rounded-sm text-xs font-mono text-gray-300">
+          <span className="text-red-400 font-bold mr-2">MAX DRAWDOWN PERIOD:</span>
+          {data.max_drawdown_period.start} &rarr; {data.max_drawdown_period.end}
         </div>
       )}
 
-      {/* Constraints Warnings */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-800 mt-8 mb-4">Risk Constraints</h3>
-        {data?.alerts?.length === 0 ? (
-          <div className="bg-green-50 text-green-800 p-4 rounded-lg flex items-start border border-green-200">
-            <div className="flex-shrink-0 mt-0.5">
-              <AlertTriangle className="w-5 h-5 text-green-600" />
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-semibold">Portfolio is Healthy</h3>
-              <p className="text-sm mt-1">No risk alerts triggered. Exposure, volatility, and returns are within normal parameters.</p>
-            </div>
-          </div>
-        ) : (
-          data?.alerts?.map((alert, i) => (
-            <RiskAlert key={i} type={alert.type} message={alert.message} severity={alert.severity} />
-          ))
-        )}
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-gray-900 border border-gray-800 p-4 rounded-sm">
+          <h3 className="text-xs uppercase font-bold text-gray-400 mb-4 tracking-wider">Rolling Volatility / Sharpe (30D)</h3>
+          {rollingQ.data && <RollingMetricsChart data={rollingQ.data} />}
+          {rollingQ.isLoading && <div className="h-[280px] animate-pulse bg-gray-800 rounded-sm" />}
+        </div>
+        <div className="bg-gray-900 border border-gray-800 p-4 rounded-sm flex flex-col items-center">
+          <h3 className="text-xs uppercase font-bold text-gray-400 mb-4 tracking-wider self-start">Daily Returns Heatmap</h3>
+          {heatmapQ.data && <ReturnHeatmap data={heatmapQ.data} />}
+          {heatmapQ.isLoading && <div className="h-[200px] animate-pulse bg-gray-800 rounded-sm w-full" />}
+        </div>
       </div>
-      
-      {/* Concentration Table */}
-      <div className="mt-8">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Asset Concentration</h3>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <table className="w-full text-left text-sm text-gray-600">
-            <thead className="bg-gray-50 border-b border-gray-100 text-gray-700 uppercase text-xs">
-              <tr>
-                <th className="px-6 py-4 font-medium">Asset Ticker</th>
-                <th className="px-6 py-4 font-medium text-right">Portfolio Weight</th>
-                <th className="px-6 py-4 font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {data?.concentration?.length > 0 ? (
-                data.concentration.sort((a,b) => b.weight_pct - a.weight_pct).map((item) => {
-                  const isHigh = item.weight_pct > 40
-                  return (
-                    <tr key={item.ticker}>
-                      <td className="px-6 py-4 font-medium text-gray-900">{item.ticker}</td>
-                      <td className="px-6 py-4 text-right tabular-nums">{item.weight_pct.toFixed(2)}%</td>
-                      <td className="px-6 py-4">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${isHigh ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                          {isHigh ? 'Overweight' : 'Normal'}
-                        </span>
-                      </td>
-                    </tr>
-                  )
-                })
-              ) : (
-                <tr><td colSpan="3" className="px-6 py-4 text-center">No assets found</td></tr>
-              )}
-            </tbody>
-          </table>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Constraints */}
+        <div className="bg-gray-900 border border-gray-800 p-4 rounded-sm">
+          <h3 className="text-xs uppercase font-bold text-gray-400 mb-4 tracking-wider">Boundary Violations</h3>
+          {data?.alerts?.length === 0 ? (
+            <div className="flex items-start text-emerald-400 text-xs font-mono p-3 bg-emerald-900/10 border border-emerald-900/50 rounded-sm">
+              <AlertTriangle className="w-4 h-4 mr-2 flex-shrink-0" />
+              <span>SYSTEM NOMINAL. NO RISK CONSTRAINTS BREACHED.</span>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {data?.alerts?.map((alert, i) => (
+                <div key={i} className={`p-3 border-l-4 text-xs font-mono rounded-r-sm ${
+                  alert.severity === 'high' ? 'bg-red-900/20 border-red-500 text-red-200' : 'bg-orange-900/20 border-orange-500 text-orange-200'
+                }`}>
+                  <span className="font-bold opacity-75 mr-2">[{alert.type.toUpperCase()}]</span> 
+                  {alert.message}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Concentration Table */}
+        <div className="bg-gray-900 border border-gray-800 rounded-sm overflow-hidden">
+          <h3 className="text-xs uppercase font-bold text-gray-400 p-4 border-b border-gray-800 tracking-wider bg-gray-900/50">Asset Weight Watch</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-gray-300 font-mono">
+              <thead className="bg-[#0b0c10] text-gray-500 border-b border-gray-800">
+                <tr>
+                  <th className="px-4 py-2 font-semibold">TICKER</th>
+                  <th className="px-4 py-2 font-semibold text-right">WEIGHT</th>
+                  <th className="px-4 py-2 font-semibold text-center">STATUS</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-800">
+                {data?.concentration?.length > 0 ? (
+                  [...data.concentration].sort((a,b) => b.weight_pct - a.weight_pct).map((item) => {
+                    const isHigh = item.weight_pct > 40
+                    return (
+                      <tr key={item.ticker} className="hover:bg-gray-800/50">
+                        <td className="px-4 py-2.5 font-bold text-gray-100">{item.ticker.replace('.NS', '')}</td>
+                        <td className="px-4 py-2.5 text-right">{item.weight_pct.toFixed(2)}%</td>
+                        <td className="px-4 py-2.5 text-center">
+                          <span className={`${isHigh ? 'text-red-400' : 'text-emerald-400'}`}>
+                            {isHigh ? 'WARN' : 'OK'}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })
+                ) : (
+                  <tr><td colSpan="3" className="px-4 py-6 text-center text-gray-600">NO ACTIVE POSITIONS</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

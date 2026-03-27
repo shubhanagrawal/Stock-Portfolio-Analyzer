@@ -1,5 +1,5 @@
 import { useQueries } from '@tanstack/react-query'
-import { getSummary, getPerformance, getRisk } from '../api/portfolio'
+import { getSummary, getPerformance, getRisk, getCorrelation, getSectors } from '../api/portfolio'
 import MetricCard from '../components/MetricCard'
 import SkeletonCard from '../components/SkeletonCard'
 import RiskAlert from '../components/RiskAlert'
@@ -8,13 +8,17 @@ import PortfolioValueChart from '../charts/PortfolioValueChart'
 import AllocationPieChart from '../charts/AllocationPieChart'
 import StockPerformanceChart from '../charts/StockPerformanceChart'
 import DrawdownChart from '../charts/DrawdownChart'
+import CorrelationMatrix from '../charts/CorrelationMatrix'
+import SectorChart from '../charts/SectorChart'
 
 export default function DashboardPage() {
-  const [summaryQ, performanceQ, riskQ] = useQueries({
+  const [summaryQ, performanceQ, riskQ, correlationQ, sectorsQ] = useQueries({
     queries: [
       { queryKey: ['portfolio', 'summary'], queryFn: getSummary },
       { queryKey: ['portfolio', 'performance'], queryFn: () => getPerformance(90) },
       { queryKey: ['portfolio', 'risk'], queryFn: getRisk },
+      { queryKey: ['portfolio', 'correlation'], queryFn: getCorrelation },
+      { queryKey: ['portfolio', 'sectors'], queryFn: getSectors },
     ]
   })
 
@@ -24,7 +28,7 @@ export default function DashboardPage() {
   if (error) return <ErrorState message={error.message || "Failed to fetch dashboard data"} onRetry={() => window.location.reload()} />
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 space-y-4">
       {/* Metric cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {loading ? (
@@ -39,31 +43,54 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Charts grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl p-4 shadow-sm">
-          <h3 className="text-sm font-medium text-gray-500 mb-3">Portfolio vs NIFTY 50</h3>
-          {performanceQ.data && <PortfolioValueChart data={performanceQ.data} />}
+      {/* Main Grid Restructure - Dense Layout */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        {/* Left/Center Column - Charts */}
+        <div className="xl:col-span-2 space-y-4">
+          <div className="bg-gray-900 border border-gray-800 p-4 rounded-sm">
+            <h3 className="text-xs uppercase font-bold text-gray-400 mb-4 tracking-wider">Portfolio vs Benchmark (90D)</h3>
+            {performanceQ.data && <PortfolioValueChart data={performanceQ.data} />}
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-gray-900 border border-gray-800 p-4 rounded-sm">
+              <h3 className="text-xs uppercase font-bold text-gray-400 mb-4 tracking-wider">Drawdown Risk</h3>
+              {performanceQ.data && <DrawdownChart data={performanceQ.data} />}
+            </div>
+            <div className="bg-gray-900 border border-gray-800 p-4 rounded-sm">
+              <h3 className="text-xs uppercase font-bold text-gray-400 mb-4 tracking-wider">Holdings Performance</h3>
+              {summaryQ.data && <StockPerformanceChart holdings={summaryQ.data.holdings} />}
+            </div>
+          </div>
+          {riskQ.data?.alerts?.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-xs uppercase font-bold text-gray-400 mb-2 tracking-wider">Active Alerts</h3>
+              {riskQ.data.alerts.map((alert, i) => (
+                <div key={i} className={`p-3 border-l-4 text-xs font-mono rounded-r-sm ${
+                  alert.severity === 'high' ? 'bg-red-900/20 border-red-500 text-red-200' : 'bg-orange-900/20 border-orange-500 text-orange-200'
+                }`}>
+                  <span className="font-bold opacity-75 mr-2">[{alert.type.toUpperCase()}]</span> 
+                  {alert.message}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        <div className="bg-white rounded-xl p-4 shadow-sm">
-          <h3 className="text-sm font-medium text-gray-500 mb-3">Asset Allocation</h3>
-          {summaryQ.data && <AllocationPieChart holdings={summaryQ.data.holdings} />}
-        </div>
-        <div className="bg-white rounded-xl p-4 shadow-sm">
-          <h3 className="text-sm font-medium text-gray-500 mb-3">Stock Performance</h3>
-          {summaryQ.data && <StockPerformanceChart holdings={summaryQ.data.holdings} />}
-        </div>
-        <div className="bg-white rounded-xl p-4 shadow-sm">
-          <h3 className="text-sm font-medium text-gray-500 mb-3">Drawdown</h3>
-          {performanceQ.data && <DrawdownChart data={performanceQ.data} />}
-        </div>
-      </div>
 
-      {/* Risk alerts */}
-      <div className="space-y-4">
-        {riskQ.data?.alerts?.map((alert, i) => (
-          <RiskAlert key={i} type={alert.type} message={alert.message} severity={alert.severity} />
-        ))}
+        {/* Right Column - Allocation & Correlation */}
+        <div className="space-y-4">
+          <div className="bg-gray-900 border border-gray-800 p-4 rounded-sm">
+            <h3 className="text-xs uppercase font-bold text-gray-400 mb-4 tracking-wider">Asset Allocation</h3>
+            {summaryQ.data && <AllocationPieChart holdings={summaryQ.data.holdings} />}
+          </div>
+          <div className="bg-gray-900 border border-gray-800 p-4 rounded-sm">
+            <h3 className="text-xs uppercase font-bold text-gray-400 mb-4 tracking-wider">Sector Overview</h3>
+            {sectorsQ.data && <SectorChart data={sectorsQ.data} />}
+          </div>
+          <div className="bg-gray-900 border border-gray-800 p-4 rounded-sm">
+            <h3 className="text-xs uppercase font-bold text-gray-400 mb-4 tracking-wider">Holdings Correlation</h3>
+            {correlationQ.data && <CorrelationMatrix data={correlationQ.data} />}
+          </div>
+        </div>
       </div>
     </div>
   )

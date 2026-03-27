@@ -12,6 +12,7 @@ from config import get_settings
 from models.user import User
 from models.transaction import Transaction
 from models.price_cache import PriceCache
+from models.watchlist import Watchlist
 
 config = context.config
 
